@@ -1,0 +1,23 @@
+/node_modules
+/.next/
+/out/
+/build
+.DS_Store
+*.pem
+npm-debug.log*
+.env
+.env.local
+.env*.local
+*.tsbuildinfo
+next-env.d.ts
+.next-fork/
+.next-preview/
+
+# pitch video and its build output (large, never committed)
+/video/
+*.mp4
+*.mov
+
+# Foundry build output (run `cd contracts && forge build` to regenerate; the deploy script reads contracts/out)
+/contracts/out/
+/contracts/cache/

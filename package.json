@@ -1,0 +1,31 @@
+{
+  "name": "privora",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Privora \u2014 Uniswap v4 on Robinhood Chain, powered by Anon-RPC. Swap privately. Read anonymously.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "next dev -p 3200",
+    "build": "next build",
+    "start": "next start -p 3200",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --no-warnings \"src/lib/**/*.test.ts\"",
+    "e2e:v4": "node --no-warnings scripts/e2e-v4.mts"
+  },
+  "dependencies": {
+    "@anon-rpc/browser-harness": "0.4.0",
+    "@tanstack/react-query": "^5.106.1",
+    "next": "16.4.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "viem": "^2.57.16"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
