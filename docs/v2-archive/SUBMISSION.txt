@@ -1,0 +1,27 @@
+SHORT DESCRIPTION
+Your swaps are public. Your queries don't have to be. Uniswap V2 with every read via Anon-RPC.
+
+DESCRIPTION
+Your swaps are public. Your queries don't have to be. Uniswap V2 with every read via Anon-RPC.
+
+DESCRIPTION
+Your swaps are public onchain. Your lookups don't have to be. Before every trade, a Uniswap app asks an RPC provider for your balances, allowances, pool reserves and prices. Each request carries your IP address and names the wallet and tokens you care about, so one company can link who you are to what you own and what you watch, before you ever sign anything.
+
+Privora is a Uniswap V2 interface that removes that link. Every read is sent through Anon-RPC, the anonymous RPC transport from the Ethereum ecosystem, so the provider receives your question from a mixnet exit and cannot tell who asked. Trading is unchanged: the real Uniswap V2 router and pair contracts, your own wallet signs every transaction, approvals are for the exact amount, and nothing is custodial.
+
+The privacy is checkable, not a badge. Privora fails closed: if the privacy layer goes down, reads stop instead of quietly falling back to a normal RPC. A Privacy page shows every request, its route and its latency, with a direct-reads counter that stays at zero. You can even kill the worker and watch nothing leak. The app covers swap, add and remove liquidity, featured and newest pools, and settings.
+
+We are upfront about the limits: transactions and addresses are public onchain. Privora protects the lookups that come before them.
+
+HOW IT'S MADE
+The big idea: privacy at the transport layer. Instead of inventing a new protocol, we put one choke point between the app and the network. Everything that reads Ethereum goes through a single function, rpcRead(), so privacy is enforced in one place and cannot be bypassed by accident.
+
+How the pieces fit: a Next.js 16 and TypeScript front end. viem does all Ethereum access through a custom transport built on rpcRead(), so every hook (balances, allowances, quotes, pools, receipts) is private by construction. The wallet is plain EIP-1193, and writes go through the user's own wallet on a separate path from reads.
+
+Partner technology, Anon-RPC: rpcRead() calls worker.fetch() on @anon-rpc/browser-harness 0.4.0, a hash-pinned worker in a sandboxed iframe that sends requests through a mixnet (Nox by default, tor-js and Nym supported). Each wallet session gets a fresh isolation key, so sessions are not linked. It gave us a real, verifiable anonymising transport instead of a privacy badge, and spared us from building our own anonymity layer. If no worker is ready, rpcRead() throws before touching the network: fail-closed, never a quiet fallback.
+
+Making a slow network usable: mixnet requests take seconds, so reads are batched with Multicall3 (a quote costs one request instead of several), queued with limited concurrency, and retried. A boot watchdog abandons a stuck worker and fails over between anonymising networks, never to a direct connection, and the app recovers on its own in the background. viem's default receipt polling overloaded the mixnet, so transactions are confirmed with one small request every few seconds.
+
+Hacks worth mentioning: fee-on-transfer tokens are found by simulating first and falling back to the SupportingFeeOnTransfer router functions, and the gas buffer came from replaying a failed transaction with cast. Token logos are bundled and unknown tokens get identicons made from their address, so the page never calls a logo CDN that could see the visitor's IP.
+
+How we know it works: a dependency-free Chrome DevTools driver runs real-browser tests, including one that reads the browser's own resource log and proves the page sends no request to the RPC host after worker setup. Wallet-signed flows run on an anvil Sepolia fork with an injected EIP-1193 stub, and real swaps ran on Sepolia.
