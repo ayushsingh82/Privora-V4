@@ -21,3 +21,6 @@ next-env.d.ts
 # Foundry build output (run `cd contracts && forge build` to regenerate; the deploy script reads contracts/out)
 /contracts/out/
 /contracts/cache/
+
+# v4-core dependency for the hook (install: cd contracts && forge install Uniswap/v4-core@v4.0.0 --no-git)
+/contracts/lib/
