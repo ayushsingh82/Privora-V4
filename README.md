@@ -18,7 +18,16 @@ A **Uniswap v4** swap interface for **Robinhood Chain** where every chain read t
 
 ## Contents
 
-[Live demo](https://privora-v4.vercel.app/) · [Problem](#the-problem) · [Solution](#the-solution) · [Architecture](#architecture) · [Swap flow](#swap-flow) · [Privacy model](#privacy-model) · [Test $WIF](#test-wif-for-the-demo) · [Quick start](#quick-start) · [Testing](#testing) · [Contracts](#contracts) · [Project layout](#project-layout) · [Limits](#limits) · [Docs](#documentation)
+[Live demo](https://privora-v4.vercel.app/) · [Problem](#the-problem) · [Solution](#the-solution) · [Architecture](#architecture) · [Swap flow](#swap-flow) · [Privacy model](#privacy-model) · [Test $WIF](#test-wif-for-the-demo) · [Guard hook](#privora-guard-hook-v4-hook-extra-feature) · [Quick start](#quick-start) · [Testing](#testing) · [Contracts](#contracts) · [Project layout](#project-layout) · [Limits](#limits) · [Docs](#documentation)
+
+## What is inside
+
+| Part | What it does |
+| --- | --- |
+| **Private reads** | Every chain read (balances, allowances, quotes, pool state) goes through Anon-RPC and is blocked if the worker is not ready. |
+| **Swap UI** | ETH ⇄ token swaps via the Universal Router and Permit2, simulated first. |
+| **Privora Guard hook** | A custom Uniswap v4 hook ([details](#privora-guard-hook-v4-hook-extra-feature)) that blocks any single swap moving a pool's price by more than 10%. |
+| **Test $WIF** | A demo token with two pools: a plain ETH/tWIF pool and a hooked one (select **tWIF·Guard**). |
 
 ## The problem
 
@@ -30,8 +39,9 @@ Privora keeps the official Uniswap v4 contracts and changes only the **transport
 
 | Privora **is** | Privora **is not** |
 | --- | --- |
-| A frontend over the unmodified Uniswap v4 contracts (PoolManager, V4Quoter, StateView, Universal Router, Permit2) | A new AMM, a hook, or a changed swap formula |
+| A frontend over the unmodified Uniswap v4 contracts (PoolManager, V4Quoter, StateView, Universal Router, Permit2) | A new AMM or a changed swap formula (the optional Guard hook only adds a swap-size limit on one pool) |
 | A real `@anon-rpc/browser-harness` integration in the read layer | A swapped RPC URL or a cosmetic "privacy" badge |
+| Ships one custom v4 hook, **Privora Guard**, on a demo pool | Audited or production-ready |
 | Fail-closed, with a live log of every request and its transport | A way to hide your address or transactions onchain |
 | Honest about its limits (see [Privacy model](#privacy-model)) | A guarantee of anonymity beyond the Anon-RPC threat model |
 
@@ -213,6 +223,13 @@ Uniswap v4 on Robinhood Chain (same addresses on mainnet `4663` and testnet `466
 | Permit2 | `0x000000000022D473030F116dDEE9F6B43aC78BA3` |
 | Multicall3 | `0xcA11bde05977b3631167028862bE2a173976CA11` |
 
+Deployed by Privora on testnet `46630` (see `src/lib/deployed.ts` and `src/lib/deployedHook.ts`):
+
+| Contract | Address |
+| --- | --- |
+| Test $WIF (tWIF) | `0x36b31eb911039f449cef6e775f253fabad1db701` |
+| PrivoraGuardHook | `0x4959cB5a32a0887EAe43839722C79709Abe580C0` |
+
 ## Project layout
 
 ```
@@ -224,8 +241,8 @@ src/
     ethereum/           chain config, viem read client, wallet
     uniswap/            ABIs, PoolKey/pool id, Universal Router encoding, price math, pools
     tokenList.ts        curated tokens and pools (pure, unit-testable)
-contracts/              TestWIF.sol (Foundry)
-scripts/                deploy-testwif, fork-swap-test, e2e-v4
+contracts/              TestWIF.sol, PrivoraGuardHook.sol + Foundry tests (install deps: forge install Uniswap/v4-core@v4.0.0 --no-git)
+scripts/                deploy-testwif, deploy-hook, fork-swap-test, e2e-v4
 notes/                  plan, findings, status, commit plan
 docs/                   demo script, submission text, Anon-RPC integration, V2 archive
 ```
