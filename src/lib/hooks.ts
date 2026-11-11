@@ -78,7 +78,11 @@ export function useQuote(from: Token | null, to: Token | null, amountIn: bigint)
       const [q, slot0] = await Promise.all([
         readClient.call({ to: CHAIN.quoter, data }),
         readClient.readContract({ address: CHAIN.stateView, abi: stateViewAbi, functionName: "getSlot0", args: [id] }),
-      ]);
+      ]).catch((e) => {
+        // A hook can revert the swap (Privora Guard: price move above the pool's limit) which surfaces as a failed quote.
+        if (pool.hooks) throw new Error(`Blocked by the pool's Privora Guard hook: this swap would move the price by more than ${((pool.maxMoveBps ?? 0) / 100).toFixed(0)}%. Try a smaller amount.`);
+        throw e;
+      });
       if (!q.data) throw new Error("No route: the pool returned no quote (no liquidity for this size?)");
       const [out, gas] = decodeFunctionResult({ abi: quoterAbi, functionName: "quoteExactInputSingle", data: q.data });
       if (out <= 0n) throw new Error("No route: zero output");

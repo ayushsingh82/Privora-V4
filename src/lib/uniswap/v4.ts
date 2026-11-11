@@ -1,6 +1,6 @@
 // Uniswap v4 pure helpers: pool keys/ids, curated pools, Universal Router calldata. No network access here (unit-testable).
 import { encodeAbiParameters, encodePacked, keccak256, zeroAddress, type Address, type Hex } from "viem";
-import { FEATURED_POOLS, ETH, type Token } from "../tokenList.ts";
+import { FEATURED_POOLS, ETH, sameToken, type Token } from "../tokenList.ts";
 
 export interface PoolKey {
   currency0: Address;
@@ -33,21 +33,23 @@ export interface CuratedPool {
   token: Token;
   fee: number;
   tickSpacing: number;
+  hooks?: Address;
+  maxMoveBps?: number;
 }
 export const CURATED: CuratedPool[] = FEATURED_POOLS;
 
 export function keyFor(c: CuratedPool): PoolKey {
-  return { currency0: zeroAddress, currency1: c.token.address, fee: c.fee, tickSpacing: c.tickSpacing, hooks: zeroAddress };
+  return { currency0: zeroAddress, currency1: c.token.address, fee: c.fee, tickSpacing: c.tickSpacing, hooks: c.hooks ?? zeroAddress };
 }
 
 /** The ETH pool for a (from,to) pair, with swap direction. Native ETH is currency0, so ETH → token is zeroForOne. */
 export function routeFor(from: Token, to: Token): { pool: CuratedPool; zeroForOne: boolean } | null {
   if (from.native && !to.native) {
-    const pool = CURATED.find((c) => c.token.address.toLowerCase() === to.address.toLowerCase());
+    const pool = CURATED.find((c) => sameToken(c.token, to));
     return pool ? { pool, zeroForOne: true } : null;
   }
   if (!from.native && to.native) {
-    const pool = CURATED.find((c) => c.token.address.toLowerCase() === from.address.toLowerCase());
+    const pool = CURATED.find((c) => sameToken(c.token, from));
     return pool ? { pool, zeroForOne: false } : null;
   }
   return null; // token ↔ token (multi-hop) is not in v1

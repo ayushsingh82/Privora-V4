@@ -29,7 +29,9 @@ export default function PoolCard({ p, index = 0 }: { p: Pool; index?: number }) 
             <div className="mt-0.5 flex gap-1.5 text-[11px] text-muted">
               <span className="rounded bg-card2 px-1.5 py-0.5">V4</span>
               <span className="rounded bg-card2 px-1.5 py-0.5">{p.fee / 10000}%</span>
-              <span className="rounded bg-card2 px-1.5 py-0.5">no hook</span>
+              {p.key.hooks !== "0x0000000000000000000000000000000000000000"
+                ? <span className="rounded bg-accent px-1.5 py-0.5 font-semibold text-accent-fg">Privora Guard hook</span>
+                : <span className="rounded bg-card2 px-1.5 py-0.5">no hook</span>}
               {empty && <span className="rounded bg-bad/15 px-1.5 py-0.5 text-bad">Empty</span>}
             </div>
           </div>
