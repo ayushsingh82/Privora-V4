@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/assets/logo.svg" alt="Privora logo" width="96" height="96" />
+
 # Privora
 
 ### Swap privately. Read anonymously.
