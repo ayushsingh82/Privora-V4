@@ -149,6 +149,26 @@ flowchart LR
 
 The deploy and ETH ⇄ tWIF swaps are verified end to end on an anvil fork of the testnet (`scripts/fork-swap-test.mts`). `src/lib/deployed.ts` stays `null` until a real testnet deploy, so the app never lists a token that does not exist.
 
+## Privora Guard hook (v4 hook, extra feature)
+
+`contracts/src/PrivoraGuardHook.sol` is a small, reusable Uniswap v4 hook (permissions: `beforeSwap` + `afterSwap` only). It protects **thin pools**: a single swap may not move the pool price by more than `maxMoveBps` (10% on our deploy). Bigger swaps revert, so the V4Quoter and the UI show "blocked, try a smaller amount" instead of a terrible fill. It also keeps per-pool stats (`swapCount`, `largestMoveBps`) and emits `GuardedSwap`.
+
+```mermaid
+flowchart LR
+  S["Swap via Universal Router"] --> PM["PoolManager"]
+  PM -- beforeSwap --> H["PrivoraGuardHook: store price"]
+  PM --> X["swap executes"]
+  X -- afterSwap --> H2["PrivoraGuardHook: price move over limit?"]
+  H2 -- "no: count and emit" --> OK["Swap settles"]
+  H2 -- "yes: revert PriceMoveTooLarge" --> NO["Swap blocked"]
+```
+
+- **Hook (testnet):** `0x4959cB5a32a0887EAe43839722C79709Abe580C0` (CREATE2, address bits `0x00C0`)
+- **Guarded pool:** ETH / tWIF, fee 0.3%, id `0xdfe9df157fe7b6be66617a6e2f3e333aa21fa260c2c8b4f8c24ba8a5fef64026`
+- **Verified on-chain (Quoter `eth_call`):** 0.00005 ETH quotes about 48.6 tWIF; 0.001 ETH is rejected by the hook, while the same 0.001 ETH on the plain pool quotes about 831 tWIF (roughly 17% price impact).
+- **Tests:** `cd contracts && forge install Uniswap/v4-core@v4.0.0 --no-git && forge test` (3 tests: small swap passes and is counted, huge swap reverts, only the PoolManager can call the hook).
+- **Deploy:** `node --no-warnings scripts/deploy-hook.mts deploy` (mines the CREATE2 salt, deploys, creates the hooked pool). In the app, pick **tWIF·Guard** to trade through it.
+
 ## Quick start
 
 ```bash
@@ -216,6 +236,7 @@ docs/                   demo script, submission text, Anon-RPC integration, V2 a
 - No liquidity provision UI yet (the page is a placeholder).
 - Tens of thousands of v4 pools exist on testnet and `eth_getLogs` is capped, so the pool list is curated (`src/lib/tokenList.ts`) rather than discovered.
 - A real signed wallet swap on the live testnet is not yet recorded; swaps are verified by simulation and on an anvil fork.
+- The Guard hook limits price move per swap only; it is a demo-grade hook, not audited.
 - Anonymity depends on the Anon-RPC network's threat model.
 
 ## Documentation
