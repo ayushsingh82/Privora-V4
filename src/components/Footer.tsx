@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Logo from "./Logo";
 
-const GH = "https://github.com/ayushsingh82/Privora";
+const GH = "https://github.com/ayushsingh82/Privora-V4";
 
 export default function Footer() {
   const col = "text-sm text-neutral-400 transition-colors hover:text-white";
@@ -28,16 +28,12 @@ export default function Footer() {
             <ul className="mt-4 space-y-2">
               <li><a href={GH} target="_blank" rel="noreferrer" className={col}>GitHub</a></li>
               <li><a href={`${GH}/blob/main/docs/ANON_RPC_INTEGRATION.md`} target="_blank" rel="noreferrer" className={col}>Anon-RPC integration</a></li>
-              <li><a href={`${GH}/blob/main/docs/TEST_REPORT.md`} target="_blank" rel="noreferrer" className={col}>Test report</a></li>
+              <li><a href={`${GH}/blob/main/docs/v2-archive/TEST_REPORT.md`} target="_blank" rel="noreferrer" className={col}>Test report</a></li>
               <li><a href="/#architecture" className={col}>Architecture</a></li>
             </ul>
           </div>
         </div>
         <p aria-hidden className="mt-14 select-none text-center font-bold leading-none tracking-tighter text-accent text-[clamp(72px,19vw,260px)]">Privora</p>
-        <div className="mt-8 flex flex-col gap-2 pt-6 text-xs text-neutral-600 sm:flex-row sm:items-center sm:justify-between">
-          <span>© 2026 Privora · built for the World is Flat hackathon on Robinhood Chain</span>
-          <span>Built on Uniswap v4 and Anon-RPC</span>
-        </div>
       </div>
     </footer>
   );

@@ -10,7 +10,7 @@ A **Uniswap v4** swap interface for **Robinhood Chain** where every chain read t
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs) ![viem](https://img.shields.io/badge/viem-2.x-1e1e1e) ![Uniswap v4](https://img.shields.io/badge/Uniswap-v4-ccff00?labelColor=000000) ![Anon-RPC](https://img.shields.io/badge/Anon--RPC-browser--harness%200.4.0-ccff00?labelColor=000000) ![Robinhood Chain](https://img.shields.io/badge/Robinhood%20Chain-testnet%2046630-00c805?labelColor=000000) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-Built for the **World is Flat** hackathon on Robinhood Chain.
+**[Live demo](https://privora-v4.vercel.app/)** · Built for the **World is Flat** hackathon on Robinhood Chain · Uniswap v4 + custom Privora Guard hook
 
 </div>
 
@@ -18,7 +18,7 @@ Built for the **World is Flat** hackathon on Robinhood Chain.
 
 ## Contents
 
-[Problem](#the-problem) · [Solution](#the-solution) · [Architecture](#architecture) · [Swap flow](#swap-flow) · [Privacy model](#privacy-model) · [Test $WIF](#test-wif-for-the-demo) · [Quick start](#quick-start) · [Testing](#testing) · [Contracts](#contracts) · [Project layout](#project-layout) · [Limits](#limits) · [Docs](#documentation)
+[Live demo](https://privora-v4.vercel.app/) · [Problem](#the-problem) · [Solution](#the-solution) · [Architecture](#architecture) · [Swap flow](#swap-flow) · [Privacy model](#privacy-model) · [Test $WIF](#test-wif-for-the-demo) · [Quick start](#quick-start) · [Testing](#testing) · [Contracts](#contracts) · [Project layout](#project-layout) · [Limits](#limits) · [Docs](#documentation)
 
 ## The problem
 
