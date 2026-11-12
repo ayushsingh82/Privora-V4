@@ -23,8 +23,9 @@ export default function WalletButton() {
   return (
     <div className="relative flex items-center gap-2">
       {wrong && (
-        <button onClick={switchToAppChain} className="rounded-md bg-bad/15 px-3.5 py-2.5 text-sm font-semibold text-bad hover:bg-bad/25">Switch to {CHAIN.name}</button>
+        <button onClick={switchToAppChain} className="rounded-md bg-bad/15 px-3.5 py-2.5 text-sm font-semibold text-bad hover:bg-bad/25">Switch to {CHAIN.name} <span className="mono text-xs opacity-70">(wallet reports chain {w.chainId}, need {CHAIN.id})</span></button>
       )}
+      {wrong && w.error && <span className="max-w-xs truncate text-xs text-bad" title={w.error}>{w.error}</span>}
       <button onClick={() => setOpen((o) => !o)} className="mono flex items-center gap-2 rounded-md bg-card py-2.5 pl-4 pr-3.5 text-sm font-medium transition hover:bg-card2" aria-expanded={open}>
         {short(w.address)}
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6l4 4 4-4" /></svg>

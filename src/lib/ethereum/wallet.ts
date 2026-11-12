@@ -81,6 +81,8 @@ export async function switchToAppChain() {
   const chainId = `0x${CHAIN.id.toString(16)}`;
   try {
     await p.request({ method: "wallet_switchEthereumChain", params: [{ chainId }] });
+    // Re-read the live chain so the UI can't stay stale if the chainChanged event was missed.
+    set({ chainId: parseInt((await p.request({ method: "eth_chainId" })) as string, 16) });
   } catch (e) {
     // 4902 = chain not added to the wallet yet: add it (wallet shows its own approval prompt), which also switches.
     if ((e as { code?: number }).code === 4902) {
