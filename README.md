@@ -18,7 +18,7 @@ A **Uniswap v4** swap interface for **Robinhood Chain** where every chain read t
 
 ## Contents
 
-[Live demo](https://privora-v4.vercel.app/) · [Problem](#the-problem) · [Solution](#the-solution) · [Architecture](#architecture) · [Swap flow](#swap-flow) · [Privacy model](#privacy-model) · [Test $WIF](#test-wif-for-the-demo) · [Guard hook](#privora-guard-hook-v4-hook-extra-feature) · [Quick start](#quick-start) · [Testing](#testing) · [Contracts](#contracts) · [Project layout](#project-layout) · [Limits](#limits) · [Docs](#documentation)
+[Live demo](https://privora-v4.vercel.app/) · [Problem](#the-problem) · [Solution](#the-solution) · [Architecture](#architecture) · [Swap flow](#swap-flow) · [Privacy model](#privacy-model) · [Test $WIF](#test-wif-for-the-demo) · [Guard hook](#privora-guard-hook-v4-hook-extra-feature) · [Live proof](#live-testnet-proof) · [Quick start](#quick-start) · [Testing](#testing) · [Contracts](#contracts) · [Project layout](#project-layout) · [Limits](#limits) · [Docs](#documentation)
 
 ## What is inside
 
@@ -173,11 +173,22 @@ flowchart LR
   H2 -- "yes: revert PriceMoveTooLarge" --> NO["Swap blocked"]
 ```
 
-- **Hook (testnet):** `0x4959cB5a32a0887EAe43839722C79709Abe580C0` (CREATE2, address bits `0x00C0`)
+- **Hook (testnet):** [`0x4959cB5a32a0887EAe43839722C79709Abe580C0`](https://explorer.testnet.chain.robinhood.com/address/0x4959cB5a32a0887EAe43839722C79709Abe580C0) (CREATE2, address bits `0x00C0`)
 - **Guarded pool:** ETH / tWIF, fee 0.3%, id `0xdfe9df157fe7b6be66617a6e2f3e333aa21fa260c2c8b4f8c24ba8a5fef64026`
 - **Verified on-chain (Quoter `eth_call`):** 0.00005 ETH quotes about 48.6 tWIF; 0.001 ETH is rejected by the hook, while the same 0.001 ETH on the plain pool quotes about 831 tWIF (roughly 17% price impact).
 - **Tests:** `cd contracts && forge install Uniswap/v4-core@v4.0.0 --no-git && forge test` (3 tests: small swap passes and is counted, huge swap reverts, only the PoolManager can call the hook).
 - **Deploy:** `node --no-warnings scripts/deploy-hook.mts deploy` (mines the CREATE2 salt, deploys, creates the hooked pool). In the app, pick **tWIF·Guard** to trade through it.
+
+## Live testnet proof
+
+Real signed swaps through the Guard-hooked ETH/tWIF pool on Robinhood Chain testnet (script: `scripts/live-swap-test.mts`):
+
+| Step | Result | Explorer |
+| --- | --- | --- |
+| Buy 0.00005 ETH → tWIF | Received 48.6377 tWIF, exactly the quote | [`0x400b…2746`](https://explorer.testnet.chain.robinhood.com/tx/0x400b4fb4d246cd0ce21c1dcc80d63268f92318c32f72c60d87f28274e55c2746) |
+| Sell 24.32 tWIF → ETH | Via Permit2 and the Universal Router, quote 0.0000252 ETH | [`0x61a6…e324`](https://explorer.testnet.chain.robinhood.com/tx/0x61a63e52f2091dc42555efb42c3dc7f57b107e9e35befb4a55f962deed32e324) |
+| Swap of 0.001 ETH | Rejected by the Guard hook (more than 10% price move) | n/a (reverts in the quote) |
+| Hook stats | `swapCount` = 2, `largestMoveBps` = 483 | [PrivoraGuardHook](https://explorer.testnet.chain.robinhood.com/address/0x4959cB5a32a0887EAe43839722C79709Abe580C0) |
 
 ## Quick start
 
@@ -227,8 +238,8 @@ Deployed by Privora on testnet `46630` (see `src/lib/deployed.ts` and `src/lib/d
 
 | Contract | Address |
 | --- | --- |
-| Test $WIF (tWIF) | `0x36b31eb911039f449cef6e775f253fabad1db701` |
-| PrivoraGuardHook | `0x4959cB5a32a0887EAe43839722C79709Abe580C0` |
+| Test $WIF (tWIF) | [`0x36b31eb911039f449cef6e775f253fabad1db701`](https://explorer.testnet.chain.robinhood.com/address/0x36b31eb911039f449cef6e775f253fabad1db701) |
+| PrivoraGuardHook | [`0x4959cB5a32a0887EAe43839722C79709Abe580C0`](https://explorer.testnet.chain.robinhood.com/address/0x4959cB5a32a0887EAe43839722C79709Abe580C0) |
 
 ## Project layout
 
@@ -252,7 +263,7 @@ docs/                   demo script, submission text, Anon-RPC integration, V2 a
 - ETH ⇄ token swaps on single, curated, hook-less pools only: no multi-hop, no token ⇄ token.
 - No liquidity provision UI yet (the page is a placeholder).
 - Tens of thousands of v4 pools exist on testnet and `eth_getLogs` is capped, so the pool list is curated (`src/lib/tokenList.ts`) rather than discovered.
-- Real signed swaps on the live testnet are done through the Guard pool (script: `scripts/live-swap-test.mts`): buy [`0x400b…2746`](https://explorer.testnet.chain.robinhood.com/tx/0x400b4fb4d246cd0ce21c1dcc80d63268f92318c32f72c60d87f28274e55c2746) and sell [`0x61a6…e324`](https://explorer.testnet.chain.robinhood.com/tx/0x61a63e52f2091dc42555efb42c3dc7f57b107e9e35befb4a55f962deed32e324). The hook's `swapCount` for the pool is now 2.
+- Real signed swaps on the live testnet are done through the Guard pool (script: `scripts/live-swap-test.mts`): see [Live testnet proof](#live-testnet-proof). The hook's `swapCount` for the pool is now 2.
 - The Guard hook limits price move per swap only; it is a demo-grade hook, not audited.
 - Anonymity depends on the Anon-RPC network's threat model.
 
