@@ -10,7 +10,7 @@
 
 **Extra, a custom v4 hook:** Privora Guard (`contracts/src/PrivoraGuardHook.sol`, deployed on testnet with a hooked ETH/tWIF pool): a swap that would move the price more than 10% reverts, protecting thin pools; the app shows it as "blocked" in the quote. Foundry tests plus an on-chain Quoter check are in the README.
 
-**Honest limits:** transactions are public (wallet-signed); curated ETH⇄token pools only; liquidity page is full-range add only (no remove yet); the Guard hook has no third-party audit (it has 6 Foundry tests incl. a fuzz test, and a clean Slither run).
+**Honest limits:** transactions are public (wallet-signed); curated ETH⇄token pools only; liquidity page does full-range add and remove only (no custom ranges); the Guard hook has no third-party audit (it has 6 Foundry tests incl. a fuzz test, and a clean Slither run).
 
 **Proof:** `npm run e2e:v4` (real Chrome: worker ready → v4 pools + Quoter quote via Anon-RPC → direct reads 0). On-chain simulations of ETH→token and token→ETH (with Permit2) in `notes/data/`.
 

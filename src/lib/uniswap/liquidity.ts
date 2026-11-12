@@ -1,18 +1,24 @@
 // Full-range liquidity for ETH / token v4 pools via the PositionManager (MINT_POSITION + SETTLE_PAIR + SWEEP).
 // Pure helpers, unit-tested in liquidity.test.ts.
-import { encodeAbiParameters, encodePacked, zeroAddress, type Address, type Hex } from "viem";
+import { encodeAbiParameters, encodePacked, parseAbiItem, zeroAddress, type Address, type Hex } from "viem";
 import type { PoolKey } from "./v4";
 
 export const Q96 = 2n ** 96n;
 const MAX_TICK = 887272;
-export const ACTION_MINT_POSITION = 0x02, ACTION_SETTLE_PAIR = 0x0d, ACTION_SWEEP = 0x14;
+export const ACTION_DECREASE_LIQUIDITY = 0x01, ACTION_MINT_POSITION = 0x02, ACTION_BURN_POSITION = 0x03, ACTION_SETTLE_PAIR = 0x0d, ACTION_TAKE_PAIR = 0x11, ACTION_SWEEP = 0x14;
+
+const KEY_T = { type: "tuple", components: [{ name: "currency0", type: "address" }, { name: "currency1", type: "address" }, { name: "fee", type: "uint24" }, { name: "tickSpacing", type: "int24" }, { name: "hooks", type: "address" }] } as const;
 
 export const positionManagerAbi = [
   { type: "function", name: "modifyLiquidities", stateMutability: "payable", inputs: [{ name: "unlockData", type: "bytes" }, { name: "deadline", type: "uint256" }], outputs: [] },
   { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ name: "owner", type: "address" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "ownerOf", stateMutability: "view", inputs: [{ name: "id", type: "uint256" }], outputs: [{ type: "address" }] },
+  { type: "function", name: "getPositionLiquidity", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "uint128" }] },
+  { type: "function", name: "getPoolAndPositionInfo", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ ...KEY_T, name: "poolKey" }, { name: "info", type: "uint256" }] },
 ] as const;
 
-const KEY_T = { type: "tuple", components: [{ name: "currency0", type: "address" }, { name: "currency1", type: "address" }, { name: "fee", type: "uint24" }, { name: "tickSpacing", type: "int24" }, { name: "hooks", type: "address" }] } as const;
+export const transferEvent = parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 indexed id)");
+
 
 /** Widest usable tick range for a tick spacing (multiples of the spacing). */
 export function fullRange(tickSpacing: number): { lower: number; upper: number } {
@@ -41,5 +47,22 @@ export function encodeMintFullRange(args: { key: PoolKey; liquidity: bigint; amo
     encodeAbiParameters([{ type: "address" }, { type: "address" }], [args.key.currency0, args.key.currency1]),
     encodeAbiParameters([{ type: "address" }, { type: "address" }], [zeroAddress, args.recipient]),
   ];
+  return encodeAbiParameters([{ type: "bytes" }, { type: "bytes[]" }], [actions, params]);
+}
+
+/** Liquidity to remove for a percentage (1 to 100) of a position. */
+export const liquidityShare = (total: bigint, pct: number) => (pct >= 100 ? total : (total * BigInt(Math.max(0, Math.floor(pct)))) / 100n);
+
+/**
+ * Remove liquidity: DECREASE_LIQUIDITY (+ BURN_POSITION when removing everything) then TAKE_PAIR to the recipient.
+ * Mins are 0 here; the caller protects the user by simulating first and by the pool's own price (see UI note).
+ */
+export function encodeDecrease(args: { key: PoolKey; tokenId: bigint; liquidity: bigint; burn: boolean; recipient: Address; amount0Min?: bigint; amount1Min?: bigint }): Hex {
+  const a0 = args.amount0Min ?? 0n, a1 = args.amount1Min ?? 0n;
+  const acts = args.burn ? [ACTION_DECREASE_LIQUIDITY, ACTION_BURN_POSITION, ACTION_TAKE_PAIR] : [ACTION_DECREASE_LIQUIDITY, ACTION_TAKE_PAIR];
+  const actions = encodePacked(acts.map(() => "uint8" as const), acts);
+  const params: Hex[] = [encodeAbiParameters([{ type: "uint256" }, { type: "uint256" }, { type: "uint128" }, { type: "uint128" }, { type: "bytes" }], [args.tokenId, args.liquidity, a0, a1, "0x"])];
+  if (args.burn) params.push(encodeAbiParameters([{ type: "uint256" }, { type: "uint128" }, { type: "uint128" }, { type: "bytes" }], [args.tokenId, a0, a1, "0x"]));
+  params.push(encodeAbiParameters([{ type: "address" }, { type: "address" }, { type: "address" }], [args.key.currency0, args.key.currency1, args.recipient]));
   return encodeAbiParameters([{ type: "bytes" }, { type: "bytes[]" }], [actions, params]);
 }

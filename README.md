@@ -26,7 +26,7 @@ A **Uniswap v4** swap interface for **Robinhood Chain** where every chain read t
 | --- | --- |
 | **Private reads** | Every chain read (balances, allowances, quotes, pool state) goes through Anon-RPC and is blocked if the worker is not ready. |
 | **Swap UI** | ETH ⇄ token swaps via the Universal Router and Permit2, simulated first. |
-| **Liquidity** | Add full-range v4 liquidity to the curated ETH pools through the PositionManager (reads via Anon-RPC, simulated first). |
+| **Liquidity** | Add full-range v4 liquidity to the curated ETH pools and remove 25/50/75/100% of any position, through the PositionManager (reads via Anon-RPC, simulated first). |
 | **Privora Guard hook** | A custom Uniswap v4 hook ([details](#privora-guard-hook-v4-hook-extra-feature)) that blocks any single swap moving a pool's price by more than 10%. |
 | **Test $WIF** | A demo token with two pools: a plain ETH/tWIF pool and a hooked one (select **tWIF·Guard**). |
 
@@ -190,6 +190,7 @@ Real signed swaps through the Guard-hooked ETH/tWIF pool on Robinhood Chain test
 | Sell 24.32 tWIF → ETH | Via Permit2 and the Universal Router, quote 0.0000252 ETH | [`0x61a6…e324`](https://explorer.testnet.chain.robinhood.com/tx/0x61a63e52f2091dc42555efb42c3dc7f57b107e9e35befb4a55f962deed32e324) |
 | Swap of 0.001 ETH | Rejected by the Guard hook (more than 10% price move) | n/a (reverts in the quote) |
 | Add liquidity (0.0002 ETH, full range) | Pool liquidity rose by exactly the amount minted | [`0x7db5…d6a6`](https://explorer.testnet.chain.robinhood.com/tx/0x7db52a8e749e00f4dbb0f38be14cb7561b92e1a0d9b1dce0d3d9a6f0ab2dd6a6) |
+| Remove liquidity (100%, burn position #1066927) | 0.0002 ETH returned, position NFT burned | [`0x0bb4…6958`](https://explorer.testnet.chain.robinhood.com/tx/0x0bb4d95551b31edbeb16a87dcf5117ce251bbdba723f1a7e387c8645c92b6958) |
 | Hook stats | `swapCount` = 2, `largestMoveBps` = 483 | [PrivoraGuardHook](https://explorer.testnet.chain.robinhood.com/address/0x4959cB5a32a0887EAe43839722C79709Abe580C0) |
 
 ## Quick start
@@ -215,7 +216,7 @@ node --no-warnings scripts/deploy-testwif.mts deploy
 
 ```bash
 npm run typecheck
-npm test                                   # 15 unit tests: pool id, calldata, price math, liquidity math, settings, worker manager
+npm test                                   # 17 unit tests: pool id, calldata, price math, liquidity math, settings, worker manager
 npx next build && npx next start -p 3217   # then, in another terminal:
 npm run e2e:v4                             # real Chrome: worker boots, pools + quote read via Anon-RPC, 0 direct reads
 ```
@@ -263,7 +264,7 @@ docs/                   demo script, submission text, Anon-RPC integration, V2 a
 ## Limits
 
 - ETH ⇄ token swaps on single, curated, hook-less pools only: no multi-hop, no token ⇄ token.
-- Liquidity: the Liquidity page adds **full-range** positions only (no custom ranges, no remove or collect yet). Proven live: [`0x7db5…d6a6`](https://explorer.testnet.chain.robinhood.com/tx/0x7db52a8e749e00f4dbb0f38be14cb7561b92e1a0d9b1dce0d3d9a6f0ab2dd6a6) added liquidity to the Guard pool (script: `scripts/live-liquidity-test.mts`).
+- Liquidity: the Liquidity page adds **full-range** positions only (no custom ranges, no fee-collect button; removing returns your share plus accrued fees). Proven live: [`0x7db5…d6a6`](https://explorer.testnet.chain.robinhood.com/tx/0x7db52a8e749e00f4dbb0f38be14cb7561b92e1a0d9b1dce0d3d9a6f0ab2dd6a6) added liquidity to the Guard pool (scripts: `scripts/live-liquidity-test.mts`, `scripts/live-remove-liquidity-test.mts`).
 - Tens of thousands of v4 pools exist on testnet and `eth_getLogs` is capped, so the pool list is curated (`src/lib/tokenList.ts`) rather than discovered.
 - Real signed swaps on the live testnet are done through the Guard pool (script: `scripts/live-swap-test.mts`): see [Live testnet proof](#live-testnet-proof). The hook's `swapCount` for the pool is now 2.
 - Security: the Guard hook has **not had a third-party audit**. It was self-checked: 6 Foundry tests including a fuzz test (256 runs: a swap in either direction either reverts or moves the price by at most the limit), plus a Slither static analysis (2 informational notes about intentionally ignored `getSlot0` fields, nothing else). It limits price move per swap only and is demo-grade.
