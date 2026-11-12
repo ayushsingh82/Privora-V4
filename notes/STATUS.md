@@ -46,3 +46,7 @@ Repo: `~/Desktop/wif-hackathon/privora-v4` (git initialised on `main`, **nothing
 - Stale V2 scripts (e2e-anon, e2e-sepolia, e2e-tx, e2e-ui, screenshots) moved to `docs/v2-archive/scripts/`; their npm scripts removed.
 - tsc clean, tests pass, `next build` OK, no `PRIVATE_KEY=0x` secrets in the tree (only doc mentions).
 - Remaining work needs the user: faucet ETH -> deploy tWIF, wallet swap, GitHub URL, demo video, organizer answers.
+
+## Update 2026-11-12 (final push)
+- DONE: real signed swaps on live testnet (buy+sell via the Guard pool), Liquidity page (full range, live-tested), hook fuzz tests (6 Foundry tests) + Slither (2 informational), README explorer links, demo pre-flight checklist. Repo is committed and pushed; app is on Vercel.
+- STILL YOURS: record the video, fill the placeholders in docs/SUBMISSION.md, submit before 12 Nov 17:30 UTC.

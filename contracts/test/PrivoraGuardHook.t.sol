@@ -47,4 +47,36 @@ contract PrivoraGuardHookTest is Deployers {
         vm.expectRevert(PrivoraGuardHook.NotPoolManager.selector);
         hook.beforeSwap(address(this), hkey, IPoolManager.SwapParams(true, -1, 0), "");
     }
+
+    function _swapDir(bool zeroForOne, int256 amt) internal {
+        uint160 limit = zeroForOne ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1;
+        swapRouter.swap(hkey, IPoolManager.SwapParams(zeroForOne, amt, limit), PoolSwapTest.TestSettings(false, false), "");
+    }
+
+    /// @notice Fuzz: whatever the size or direction, a swap either reverts or moves the price by at most maxMoveBps.
+    function testFuzz_moveNeverExceedsMax(bool zeroForOne, uint256 amt) public {
+        amt = bound(amt, 1, 10 ether);
+        try this.externalSwap(zeroForOne, -int256(amt)) {
+            assertLe(hook.largestMoveBps(hid), hook.maxMoveBps());
+            assertEq(hook.swapCount(hid), 1);
+        } catch {
+            assertEq(hook.swapCount(hid), 0); // blocked swaps leave no trace
+        }
+    }
+
+    function externalSwap(bool zeroForOne, int256 amt) external {
+        _swapDir(zeroForOne, amt);
+    }
+
+    function test_oppositeDirectionAlsoGuarded() public {
+        vm.expectRevert();
+        _swapDir(false, -5 ether);
+    }
+
+    function test_constructorRejectsBadMax() public {
+        vm.expectRevert(bytes("bad max"));
+        new PrivoraGuardHook(manager, 0);
+        vm.expectRevert(bytes("bad max"));
+        new PrivoraGuardHook(manager, 10_000);
+    }
 }

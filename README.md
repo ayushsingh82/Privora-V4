@@ -26,6 +26,7 @@ A **Uniswap v4** swap interface for **Robinhood Chain** where every chain read t
 | --- | --- |
 | **Private reads** | Every chain read (balances, allowances, quotes, pool state) goes through Anon-RPC and is blocked if the worker is not ready. |
 | **Swap UI** | ETH ⇄ token swaps via the Universal Router and Permit2, simulated first. |
+| **Liquidity** | Add full-range v4 liquidity to the curated ETH pools through the PositionManager (reads via Anon-RPC, simulated first). |
 | **Privora Guard hook** | A custom Uniswap v4 hook ([details](#privora-guard-hook-v4-hook-extra-feature)) that blocks any single swap moving a pool's price by more than 10%. |
 | **Test $WIF** | A demo token with two pools: a plain ETH/tWIF pool and a hooked one (select **tWIF·Guard**). |
 
@@ -176,7 +177,7 @@ flowchart LR
 - **Hook (testnet):** [`0x4959cB5a32a0887EAe43839722C79709Abe580C0`](https://explorer.testnet.chain.robinhood.com/address/0x4959cB5a32a0887EAe43839722C79709Abe580C0) (CREATE2, address bits `0x00C0`)
 - **Guarded pool:** ETH / tWIF, fee 0.3%, id `0xdfe9df157fe7b6be66617a6e2f3e333aa21fa260c2c8b4f8c24ba8a5fef64026`
 - **Verified on-chain (Quoter `eth_call`):** 0.00005 ETH quotes about 48.6 tWIF; 0.001 ETH is rejected by the hook, while the same 0.001 ETH on the plain pool quotes about 831 tWIF (roughly 17% price impact).
-- **Tests:** `cd contracts && forge install Uniswap/v4-core@v4.0.0 --no-git && forge test` (3 tests: small swap passes and is counted, huge swap reverts, only the PoolManager can call the hook).
+- **Tests:** `cd contracts && forge install Uniswap/v4-core@v4.0.0 --no-git && forge test` (6 tests: small swap passes and is counted, huge swap reverts in both directions, only the PoolManager can call the hook, constructor limits, and a 256-run fuzz test).
 - **Deploy:** `node --no-warnings scripts/deploy-hook.mts deploy` (mines the CREATE2 salt, deploys, creates the hooked pool). In the app, pick **tWIF·Guard** to trade through it.
 
 ## Live testnet proof
@@ -188,6 +189,7 @@ Real signed swaps through the Guard-hooked ETH/tWIF pool on Robinhood Chain test
 | Buy 0.00005 ETH → tWIF | Received 48.6377 tWIF, exactly the quote | [`0x400b…2746`](https://explorer.testnet.chain.robinhood.com/tx/0x400b4fb4d246cd0ce21c1dcc80d63268f92318c32f72c60d87f28274e55c2746) |
 | Sell 24.32 tWIF → ETH | Via Permit2 and the Universal Router, quote 0.0000252 ETH | [`0x61a6…e324`](https://explorer.testnet.chain.robinhood.com/tx/0x61a63e52f2091dc42555efb42c3dc7f57b107e9e35befb4a55f962deed32e324) |
 | Swap of 0.001 ETH | Rejected by the Guard hook (more than 10% price move) | n/a (reverts in the quote) |
+| Add liquidity (0.0002 ETH, full range) | Pool liquidity rose by exactly the amount minted | [`0x7db5…d6a6`](https://explorer.testnet.chain.robinhood.com/tx/0x7db52a8e749e00f4dbb0f38be14cb7561b92e1a0d9b1dce0d3d9a6f0ab2dd6a6) |
 | Hook stats | `swapCount` = 2, `largestMoveBps` = 483 | [PrivoraGuardHook](https://explorer.testnet.chain.robinhood.com/address/0x4959cB5a32a0887EAe43839722C79709Abe580C0) |
 
 ## Quick start
@@ -213,7 +215,7 @@ node --no-warnings scripts/deploy-testwif.mts deploy
 
 ```bash
 npm run typecheck
-npm test                                   # 12 unit tests: pool id, calldata, price math, settings, worker manager
+npm test                                   # 15 unit tests: pool id, calldata, price math, liquidity math, settings, worker manager
 npx next build && npx next start -p 3217   # then, in another terminal:
 npm run e2e:v4                             # real Chrome: worker boots, pools + quote read via Anon-RPC, 0 direct reads
 ```
@@ -261,10 +263,10 @@ docs/                   demo script, submission text, Anon-RPC integration, V2 a
 ## Limits
 
 - ETH ⇄ token swaps on single, curated, hook-less pools only: no multi-hop, no token ⇄ token.
-- No liquidity provision UI yet (the page is a placeholder).
+- Liquidity: the Liquidity page adds **full-range** positions only (no custom ranges, no remove or collect yet). Proven live: [`0x7db5…d6a6`](https://explorer.testnet.chain.robinhood.com/tx/0x7db52a8e749e00f4dbb0f38be14cb7561b92e1a0d9b1dce0d3d9a6f0ab2dd6a6) added liquidity to the Guard pool (script: `scripts/live-liquidity-test.mts`).
 - Tens of thousands of v4 pools exist on testnet and `eth_getLogs` is capped, so the pool list is curated (`src/lib/tokenList.ts`) rather than discovered.
 - Real signed swaps on the live testnet are done through the Guard pool (script: `scripts/live-swap-test.mts`): see [Live testnet proof](#live-testnet-proof). The hook's `swapCount` for the pool is now 2.
-- The Guard hook limits price move per swap only; it is a demo-grade hook, not audited.
+- Security: the Guard hook has **not had a third-party audit**. It was self-checked: 6 Foundry tests including a fuzz test (256 runs: a swap in either direction either reverts or moves the price by at most the limit), plus a Slither static analysis (2 informational notes about intentionally ignored `getSlot0` fields, nothing else). It limits price move per swap only and is demo-grade.
 - Anonymity depends on the Anon-RPC network's threat model.
 
 ## Documentation
