@@ -5,6 +5,7 @@ import { CHAIN } from "@/lib/ethereum/chains";
 import { fetchCuratedPools } from "@/lib/uniswap/pools";
 import { useReadsReady } from "@/lib/hooks";
 import { friendly, isPrivacyBlock } from "@/lib/errors";
+import LiveReads from "@/components/LiveReads";
 import PoolCard, { POOL_COLS } from "@/components/PoolCard";
 import type { Pool } from "@/lib/uniswap/pools";
 
@@ -37,6 +38,7 @@ export default function Pools() {
         </div>
       </div>
 
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div>
         <h2 className="mb-1 text-sm font-medium uppercase tracking-wider text-muted">Featured ETH pools</h2>
         <p className="mb-3 text-xs text-muted">Anyone can create v4 pools here (tens of thousands exist), so this is a curated list of funded, hook-less ETH pools.</p>
@@ -49,6 +51,11 @@ export default function Pools() {
         )}
         {pools.data && pools.data.length > 0 && <PoolTable pools={pools.data} />}
         {pools.data && pools.data.length === 0 && <p className="text-sm text-muted">No curated pools found on this network.</p>}
+      </div>
+      <aside className="lg:sticky lg:top-6">
+        <LiveReads wide rows={10} />
+        <p className="mt-2 text-xs text-muted">These are the calls that loaded the pools above: pool state is read from StateView, in one batched request, through the mixnet.</p>
+      </aside>
       </div>
     </div>
   );
