@@ -252,7 +252,7 @@ docs/                   demo script, submission text, Anon-RPC integration, V2 a
 - ETH ⇄ token swaps on single, curated, hook-less pools only: no multi-hop, no token ⇄ token.
 - No liquidity provision UI yet (the page is a placeholder).
 - Tens of thousands of v4 pools exist on testnet and `eth_getLogs` is capped, so the pool list is curated (`src/lib/tokenList.ts`) rather than discovered.
-- A real signed wallet swap on the live testnet is not yet recorded; swaps are verified by simulation and on an anvil fork.
+- Real signed swaps on the live testnet are done through the Guard pool (script: `scripts/live-swap-test.mts`): buy [`0x400b…2746`](https://explorer.testnet.chain.robinhood.com/tx/0x400b4fb4d246cd0ce21c1dcc80d63268f92318c32f72c60d87f28274e55c2746) and sell [`0x61a6…e324`](https://explorer.testnet.chain.robinhood.com/tx/0x61a63e52f2091dc42555efb42c3dc7f57b107e9e35befb4a55f962deed32e324). The hook's `swapCount` for the pool is now 2.
 - The Guard hook limits price move per swap only; it is a demo-grade hook, not audited.
 - Anonymity depends on the Anon-RPC network's threat model.
 
